@@ -30,6 +30,7 @@ from pyworkflow.viewer import Viewer, DESKTOP_TKINTER, WEB_DJANGO
 from pyworkflow.em.plotter import EmPlotter
 from pyworkflow.em.viewer import CtfView
 import pyworkflow.em.showj as showj
+from pyworkflow.em.constants import OBJCMD_GCTF
 
 from protocol_gctf import ProtGctf
 
@@ -54,8 +55,6 @@ def createCtfPlot(ctfSet, ctfId):
     a.grid(True)
     xplotter.show()
 
-
-OBJCMD_GCTF = "Display Ctf Analysis"
 
 ProjectWindow.registerObjectCommand(OBJCMD_GCTF, createCtfPlot)
 

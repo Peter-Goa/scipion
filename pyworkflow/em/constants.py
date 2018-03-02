@@ -111,3 +111,6 @@ SCIPION_SYM_NAME[SYM_I222r] = 'I222r'
 SCIPION_SYM_NAME[SYM_In25] = 'In25'
 SCIPION_SYM_NAME[SYM_In25r] = 'In25r'
 
+# constants ctf estimators.
+OBJCMD_GCTF = "Display Ctf Analysis"
+OBJCMD_CTFFIND4 = "Display Ctf Fitting"

@@ -209,13 +209,12 @@ class CtfView(ObjectView):
                  ]
     EXTRA_LABELS = ['_ctffind4_ctfResolution', '_gctf_ctfResolution',
                     '_ctffind4_ctfPhaseShift', '_gctf_ctfPhaseShift',
-                    '_xmipp_ctfCritFirstZero',
-                    '_xmipp_ctfCritCorr13', '_xmipp_ctfCritIceness','_xmipp_ctfCritFitting',
+                    '_xmipp_ctfCritFirstZero', '_xmipp_ctfCritCorr13',
+                    '_xmipp_ctfCritIceness', '_xmipp_ctfCritFitting',
                     '_xmipp_ctfCritNonAstigmaticValidty',
                     '_xmipp_ctfCritCtfMargin', '_xmipp_ctfCritMaxFreq',
                     '_xmipp_ctfCritPsdCorr90', '_xmipp_ctfVPPphaseshift'
-                   ]
-
+                    ]
 
     def __init__(self, project, ctfSet, other='', **kwargs):
         first = ctfSet.getFirstItem()
@@ -249,12 +248,10 @@ class CtfView(ObjectView):
             return any(attrName.startswith(prefix)
                        for attrName, _ in obj.getAttributesToStore())
 
-        if _anyAttrStartsBy(first, '_ctffind4_ctfResolution'):
-            import pyworkflow.em.packages.grigoriefflab.viewer as gviewer
-            viewParams[showj.OBJCMDS] = "'%s'" % gviewer.OBJCMD_CTFFIND4
+        if _anyAttrStartsBy(first, '_ctffind4'):
+            viewParams[showj.OBJCMDS] = "'%s'" % OBJCMD_CTFFIND4
 
         elif _anyAttrStartsBy(first, '_gctf'):
-            from pyworkflow.em.packages.gctf.viewer import OBJCMD_GCTF
             viewParams[showj.OBJCMDS] = "'%s'" % OBJCMD_GCTF
 
         inputId = ctfSet.getObjId() or ctfSet.getFileName()

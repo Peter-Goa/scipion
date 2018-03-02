@@ -564,9 +564,7 @@ def createCtfPlot(ctfSet, ctfId):
     xplotter.show()
 
 
-OBJCMD_CTFFIND4 = "Display Ctf Fitting"
-
-ProjectWindow.registerObjectCommand(OBJCMD_CTFFIND4, createCtfPlot)
+ProjectWindow.registerObjectCommand(em.OBJCMD_CTFFIND4, createCtfPlot)
 
 
 class CtffindViewer(Viewer):
@@ -580,7 +578,7 @@ class CtffindViewer(Viewer):
         if outputCTF is not None:
             ctfView = CtfView(self._project, outputCTF)
             viewParams = ctfView.getViewParams()
-            viewParams[showj.OBJCMDS] = "'%s'" % OBJCMD_CTFFIND4
+            viewParams[showj.OBJCMDS] = "'%s'" % em.OBJCMD_CTFFIND4
             return [ctfView]
         else:
             return [self.infoMessage("The output SetOfCTFs has not been "
