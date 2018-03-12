@@ -65,6 +65,12 @@ void ProgLocSharpening::produceSideInfo()
 	FourierTransformer transformer;
 	MultidimArray<double> &inputVol = V();
 
+	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(inputVol)
+	{
+		if (DIRECT_MULTIDIM_ELEM(inputVol, n) < 0)
+			DIRECT_MULTIDIM_ELEM(inputVol, n) = 0;
+	}
+
 	Vorig = inputVol;
 
 	transformer.FourierTransform(inputVol, fftV);
@@ -320,6 +326,7 @@ void ProgLocSharpening::run()
 	int lowestIdx;
 	MultidimArray<double> filteredVol, Vrest, lastVrest, Vlocalfilt, lastVrest_aux;
 	Vlocalfilt.initZeros(Vorig);
+	lastVrest=Vorig;
 
 	std::cout << "reoslution list = "<< idxList[0] << std::endl;
 
@@ -335,7 +342,8 @@ void ProgLocSharpening::run()
 	size_t size_list;
 	size_list = idxList.size();
 
-	lastVrest = Vorig;
+	MultidimArray<double> Vdiff;
+	Vdiff.initZeros(Vorig);
 
     #ifdef DEBUG_FILTER
 	lowPassFilterFunction(fftV, 0.1214, 0.1414, filteredVol, idx);
@@ -344,11 +352,33 @@ void ProgLocSharpening::run()
 	qqqq.write(formatString("localfilter.vol"));
     #endif
 
+//////////////////////
+	double sumN=0.0, sumN2=0.0, NN=0.0, thresholdNoise=0.0;
+	double criticalZ=icdf_gauss(0.95);
+	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(Vorig)
+					{
+						double amplitudeValue=DIRECT_MULTIDIM_ELEM(Vorig, n);
+						if (DIRECT_MULTIDIM_ELEM(idxVol, n)<0)
+						{
+							sumN  += amplitudeValue;
+							sumN2 += amplitudeValue*amplitudeValue;
+							++NN;
+						}
+					}
+						double meanN=sumN/NN;
+						double sigma2N=sumN2/NN-meanN*meanN;
+
+						thresholdNoise = meanN+criticalZ*sqrt(sigma2N);
+						std::cout << "thresholdNoise = "<< thresholdNoise << std::endl;
+
+
+	/////////////////
 
     for (size_t i = 0; i<Niter; ++i)
 	{
     	std::cout << "----------------Iteration " << i << "----------------" << std::endl;
-    		Vlocalfilt=Vorig;
+    		//Vlocalfilt=Vorig;
+    		Vlocalfilt.initZeros(Vorig);
 			for (size_t k = 0; k<size_list; ++k)
 			{
 				idx = idxList[k];
@@ -367,7 +397,7 @@ void ProgLocSharpening::run()
 
 					FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
 					{
-						if (DIRECT_MULTIDIM_ELEM(idxVol, n) == idx)
+						if ((DIRECT_MULTIDIM_ELEM(idxVol, n) == idx))
 							DIRECT_MULTIDIM_ELEM(Vlocalfilt, n) = DIRECT_MULTIDIM_ELEM(filteredVol, n);
 					}
 				}
@@ -391,10 +421,20 @@ void ProgLocSharpening::run()
 			sharpenedMap=lastVrest+lambda*(filteredVol);
 			*/
 			////////////
+
 			sharpenedMap=lastVrest+lambda*(Vorig-Vlocalfilt);
+
+			Vdiff=Vorig-Vlocalfilt;
+
+			Image<double> kk;
+			kk() = Vdiff;
+			kk.write(formatString("diff_%i.vol",i));
+
+
+
 			FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(sharpenedMap)
 			{
-				if (DIRECT_MULTIDIM_ELEM(sharpenedMap, n) < 0)
+				if ((DIRECT_MULTIDIM_ELEM(sharpenedMap, n) < 0) || (DIRECT_MULTIDIM_ELEM(idxVol, n)<0))
 					DIRECT_MULTIDIM_ELEM(sharpenedMap, n) = 0;
 			}
 
