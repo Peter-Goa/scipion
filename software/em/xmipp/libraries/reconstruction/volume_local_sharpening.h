@@ -67,6 +67,9 @@ public:
     void lowPassFilterFunction(const MultidimArray< std::complex<double> > &myfftV,
     		double w, double wL, MultidimArray<double> &filteredVol, int count);
 
+    void bandPassFilterFunction(const MultidimArray< std::complex<double> > &myfftV,
+    		double w, double wL, MultidimArray<double> &filteredVol, int count);
+
     void resolution2eval(int &count_res, double step,
     								double &resolution, double &last_resolution,
     								double &freq, double &freqL,
@@ -77,6 +80,10 @@ public:
     void maxMinResolution(MultidimArray<double> &resVol,
 			double &maxRes, double &minRes);
 
+    void estimateS(MultidimArray <double> vol);
+
+    void significanceRealSpace(const MultidimArray<double> &Vi, MultidimArray<double> Vol2 ,MultidimArray<double> &Vir, int count);
+
     void resVol2IdxVol(const MultidimArray<double> &resVol, double &maxres, MultidimArray<int> &idxVol,
     		std::vector<int> &idxList);
 
@@ -84,9 +91,11 @@ public:
 
 public:
     Image<int> mask;
+    CDF cdfS;
     std::vector<int> idxList;
     MultidimArray<int> idxVol;
-    MultidimArray<double> Vorig;
+    MultidimArray<double> Vorig, VsoftMask;
+    MultidimArray<double> resVol;
     MultidimArray<double> iu, sharpenedMap; // Inverse of the frequency
 	MultidimArray< std::complex<double> > fftV, fftVfilter; // Fourier transform of the input volume
 	FourierTransformer transformer_inv;
