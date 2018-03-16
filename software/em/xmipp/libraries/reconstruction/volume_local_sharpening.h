@@ -80,6 +80,10 @@ public:
     void maxMinResolution(MultidimArray<double> &resVol,
 			double &maxRes, double &minRes);
 
+    void localfiltering(MultidimArray< std::complex<double> > &myfftV,
+    										MultidimArray<double> &localfilteredVol,
+    										double &minRes, double &maxRes, double &step);
+
     void estimateS(MultidimArray <double> vol);
 
     void significanceRealSpace(const MultidimArray<double> &Vi, MultidimArray<double> Vol2 ,MultidimArray<double> &Vir, int count);
@@ -90,21 +94,16 @@ public:
     void run();
 
 public:
-    Image<int> mask;
     CDF cdfS;
     std::vector<int> idxList;
     MultidimArray<int> idxVol;
-    MultidimArray<double> Vorig, VsoftMask;
+    MultidimArray<double> Vorig;//, VsoftMask;
     MultidimArray<double> resVol;
     MultidimArray<double> iu, sharpenedMap; // Inverse of the frequency
 	MultidimArray< std::complex<double> > fftV, fftVfilter; // Fourier transform of the input volume
 	FourierTransformer transformer_inv;
-	MultidimArray< std::complex<double> > fftVRiesz, fftVRiesz_aux;
-	FourierFilter lowPassFilter, FilterBand;
-	bool halfMapsGiven;
+	FourierFilter FilterBand;
 	Image<double> Vfiltered, VresolutionFiltered;
-	Matrix1D<double> freq_fourier;
-	Matrix2D<double> resolutionMatrix, maskMatrix;
 };
 //@}
 #endif
