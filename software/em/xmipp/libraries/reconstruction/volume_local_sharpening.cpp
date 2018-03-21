@@ -150,7 +150,7 @@ void ProgLocSharpening::maxMinResolution(MultidimArray<double> &resVol,
 }
 
 void ProgLocSharpening::bandPassFilterFunction(const MultidimArray< std::complex<double> > &myfftV,
-		double w, double wL, MultidimArray<double> &filteredVol, int count)
+		double w, double step, MultidimArray<double> &filteredVol, int count)
 {
 	fftVfilter.initZeros(myfftV);
 	size_t xdim, ydim, zdim, ndim;
@@ -161,27 +161,35 @@ void ProgLocSharpening::bandPassFilterFunction(const MultidimArray< std::complex
 	filteredVol.resizeNoCopy(Vorig);
 	//resizeNoCopy(sharpenedMap);
 
-	double delta = wL-w;
-	double w_inf = w-delta;
+	//double delta = wL-w;
+	//double w_inf = w-delta;
+	double w_inf = w;
+	double w_sup = w+step;
 	// Filter the input volume and add it to amplitude
 	long n=0;
-	double ideltal=PI/(delta);
+//	double ideltal=PI/(delta);
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(myfftV)
 	{
 		double un=DIRECT_MULTIDIM_ELEM(iu,n);
-		if (un>=w && un<=wL)
+
+		if (un<w_sup && un>=w_inf)
 		{
-			//double H=0.5*(1+cos((un-w1)*ideltal));
 			DIRECT_MULTIDIM_ELEM(fftVfilter, n) = DIRECT_MULTIDIM_ELEM(myfftV, n);
-			DIRECT_MULTIDIM_ELEM(fftVfilter, n) *= 0.5*(1+cos((un-w)*ideltal));//H;
-			//DIRECT_MULTIDIM_ELEM(testVol, n) = 1.0;
-		} else if (un<=w && un>=w_inf)
-		{
-			//double H=0.5*(1+cos((un-w1)*ideltal));
-			DIRECT_MULTIDIM_ELEM(fftVfilter, n) = DIRECT_MULTIDIM_ELEM(myfftV, n);
-			DIRECT_MULTIDIM_ELEM(fftVfilter, n) *= 0.5*(1+cos((un-w)*ideltal));//H;
-			//DIRECT_MULTIDIM_ELEM(testVol, n) = 1.0;
+            DIRECT_MULTIDIM_ELEM(testVol, n) = 1.0;
 		}
+//		if (un>=w && un<=wL)
+//		{
+//			//double H=0.5*(1+cos((un-w1)*ideltal));
+//			DIRECT_MULTIDIM_ELEM(fftVfilter, n) = DIRECT_MULTIDIM_ELEM(myfftV, n);
+//			DIRECT_MULTIDIM_ELEM(fftVfilter, n) *= 0.5*(1+cos((un-w)*ideltal));//H;
+//			//DIRECT_MULTIDIM_ELEM(testVol, n) = 1.0;
+//		} else if (un<=w && un>=w_inf)
+//		{
+//			//double H=0.5*(1+cos((un-w1)*ideltal));
+//			DIRECT_MULTIDIM_ELEM(fftVfilter, n) = DIRECT_MULTIDIM_ELEM(myfftV, n);
+//			DIRECT_MULTIDIM_ELEM(fftVfilter, n) *= 0.5*(1+cos((un-w)*ideltal));//H;
+//			//DIRECT_MULTIDIM_ELEM(testVol, n) = 1.0;
+//		}
 	}
 
 	transformer_inv.inverseFourierTransform(fftVfilter, filteredVol);
@@ -197,52 +205,67 @@ void ProgLocSharpening::bandPassFilterFunction(const MultidimArray< std::complex
 
 void ProgLocSharpening::localfiltering(MultidimArray< std::complex<double> > &myfftV,
 										MultidimArray<double> &localfilteredVol,
-										double &minRes, double &maxRes, double &step)
+										double &minFreq, double &maxFreq, double &step)
 {
 	MultidimArray<double> lastfreqVol, filteredVol, lastweight, weight;
 	localfilteredVol.initZeros(Vorig);
 	weight.initZeros(Vorig);
 	lastweight.initZeros(Vorig);
 
-	double freq, lastResolution=1e38;
-	int idx, lastidx = -1;
+	double lastResolution=1e38;
+	int idx=1, lastidx = -1;
 
-	for (double res = minRes; res<maxRes; res+=step)
+	//First band
+	double freq0=0.0;
+	double step0 = minFreq;
+	bandPassFilterFunction(myfftV, freq0, step0, filteredVol, idx);
+	localfilteredVol = filteredVol;
+
+	for (double freq = minFreq; freq<=maxFreq; freq+=step)
 	{
-		freq = sampling/res;
+		double res = sampling/freq;
+		double freqstep=sampling/(res-0.2);
+               step=freqstep-freq;
+//		DIGFREQ2FFT_IDX(freq, ZSIZE(myfftV), idx);
+//
+//		if (idx == lastidx)
+//			continue;
+//		if ((fabs(lastResolution-res))<step)
+//			continue;
 
-		DIGFREQ2FFT_IDX(freq, ZSIZE(myfftV), idx);
+		//double wL = sampling/(res - step);
+		//double wL = freq+0.001;
+		std::cout << " freqmin = " << freq <<  " freqmax = " << freq+step << "  resol= " << res << std::endl;
 
-		if (idx == lastidx)
-			continue;
-		if ((fabs(lastResolution-res))<step)
-			continue;
-
-		double wL = sampling/(res - step);
-		//double wL = freq+0.02;
-		std::cout << " resolution = " << res << "  freq = " << freq << std::endl;
-
-		bandPassFilterFunction(myfftV, freq, wL, filteredVol, idx);
+		bandPassFilterFunction(myfftV, freq, step, filteredVol, idx);
 
 		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
 		{
-			double res = DIRECT_MULTIDIM_ELEM(resVol, n)+1e-38;
-			double freq_map = sampling/res;
+			double resOk = DIRECT_MULTIDIM_ELEM(resVol, n)+1e-38;
+			//double freq_map = sampling/res;
 
-			DIRECT_MULTIDIM_ELEM(weight, n) = (exp(-0.5*(freq-freq_map)*(freq-freq_map)));
-			DIRECT_MULTIDIM_ELEM(filteredVol, n) *= DIRECT_MULTIDIM_ELEM(weight, n);
+			if (res<resOk)
+				DIRECT_MULTIDIM_ELEM(filteredVol, n)=0;
+
+			if (DIRECT_MULTIDIM_ELEM(filteredVol, n)<0)
+				DIRECT_MULTIDIM_ELEM(filteredVol, n)=0;
+
+
+//			DIRECT_MULTIDIM_ELEM(weight, n) = (exp(-0.5*(freq-freq_map)*(freq-freq_map)));
+//			DIRECT_MULTIDIM_ELEM(filteredVol, n) *= DIRECT_MULTIDIM_ELEM(weight, n);
 		}
 
 		localfilteredVol += filteredVol;
-		lastweight += weight;
-		lastResolution = res;
-		lastidx = idx;
+//		lastweight += weight;
+//		lastResolution = res;
+//		lastidx = idx;
+		++idx;
 	}
 
-	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
-	{
-		DIRECT_MULTIDIM_ELEM(localfilteredVol, n) = DIRECT_MULTIDIM_ELEM(localfilteredVol, n)/DIRECT_MULTIDIM_ELEM(lastweight, n);
-	}
+//	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
+//	{
+//		DIRECT_MULTIDIM_ELEM(localfilteredVol, n) = DIRECT_MULTIDIM_ELEM(localfilteredVol, n)/DIRECT_MULTIDIM_ELEM(lastweight, n);
+//	}
 }
 
 void ProgLocSharpening::run()
@@ -255,38 +278,40 @@ void ProgLocSharpening::run()
 	double freq;
 	int idx;
 
-	double step = 0.2;
+	double step = 0.01;
 	double lastResolution=1e38;
 
 	MultidimArray<double> operatedfiltered, Vk, filteredVol;
 
 	minRes = 2*sampling;
+    maxFreq=0.5;
+    minFreq=sampling/maxRes;
 
 	std::cout << "Resolutions between " << minRes << " and " << maxRes << std::endl;
 
 	int lastidx = -1;
 
 	double aux_maxres = 20.0;
-	localfiltering(fftV, filteredVol, minRes, maxRes, step);
-
-	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
-	{
-		if (DIRECT_MULTIDIM_ELEM(resVol, n) < 2*sampling+0.01)
-			DIRECT_MULTIDIM_ELEM(filteredVol, n) = 0;
-		if (DIRECT_MULTIDIM_ELEM(filteredVol, n) <0)
-			DIRECT_MULTIDIM_ELEM(filteredVol, n) = 0;
-	}
-
-
-
-
-
-	Image<double> save;
-	save() = filteredVol;
-	save.write("filtrado.vol");
-
-
-	exit(0);
+//	localfiltering(fftV, filteredVol, minRes, maxRes, step);
+//
+//	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
+//	{
+//		if (DIRECT_MULTIDIM_ELEM(resVol, n) <= 2*sampling)
+//			DIRECT_MULTIDIM_ELEM(filteredVol, n) = 0;
+////		if (DIRECT_MULTIDIM_ELEM(filteredVol, n) <0)
+////			DIRECT_MULTIDIM_ELEM(filteredVol, n) = 0;
+//	}
+//
+//
+//
+//
+//
+//	Image<double> save;
+//	save() = filteredVol;
+//	save.write("filtrado.vol");
+//
+//
+//	exit(0);
 
 	FourierTransformer transformer;
 
@@ -299,19 +324,29 @@ void ProgLocSharpening::run()
     	auxVol = filteredVol;
     	transformer.FourierTransform(auxVol, fftV);
 
-    	localfiltering(fftV, operatedfiltered, minRes, aux_maxres, step);
+    	localfiltering(fftV, operatedfiltered, minFreq, maxFreq, step);
 
-    	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(operatedfiltered)
-		{
-    		if (DIRECT_MULTIDIM_ELEM(operatedfiltered, n) <0)
-    			DIRECT_MULTIDIM_ELEM(operatedfiltered, n) = 0;
-		}
+//    	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(operatedfiltered)
+//		{
+//    		if (DIRECT_MULTIDIM_ELEM(operatedfiltered, n) <0)
+//    			DIRECT_MULTIDIM_ELEM(operatedfiltered, n) = 0;
+//		}
 
-//		Image<double> save;
-//		save() = operatedfiltered;
-//		save.write(fnOut);
+		Image<double> save;
+		save() = operatedfiltered;
+		save.write(formatString("sharpenedMapA_%i.vol", i));
 
 		filteredVol = Vorig-operatedfiltered;
+
+		save() = filteredVol;
+		save.write(formatString("sharpenedMapB_%i.vol", i));
+
+		////Second operator
+    	transformer.FourierTransform(filteredVol, fftV);
+    	localfiltering(fftV, filteredVol, minFreq, maxFreq, step);
+
+		save() = filteredVol;
+		save.write(formatString("sharpenedMapC_%i.vol", i));
 
 		if (i == 0)
 			Vk = Vorig;
@@ -328,13 +363,13 @@ void ProgLocSharpening::run()
 
 		Image<double> filteredvolume0;
 		filteredvolume0() = sharpenedMap;
-		filteredvolume0.write(formatString("sharpenedMap_%i.vol", i));
+		filteredvolume0.write(formatString("sharpenedMapD_%i.vol", i));
 
 		filteredVol = sharpenedMap;
 	}
-//	Image<double> filteredvolume;
-//	filteredvolume() = sharpenedMap;
-//	filteredvolume.write(fnOut);
+	Image<double> filteredvolume;
+	filteredvolume() = sharpenedMap;
+	filteredvolume.write(fnOut);
 
 		//*/
 		////////////

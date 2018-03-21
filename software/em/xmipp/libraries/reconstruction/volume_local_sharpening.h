@@ -53,7 +53,7 @@ public:
 	FileName fnOut, fnVol, fnRes;
 
 	/** sampling rate, minimum resolution, and maximum resolution */
-	double sampling, maxRes, minRes, lambda;
+	double sampling, maxRes, minRes, lambda, maxFreq, minFreq;
 	int Niter;
 
 public:
@@ -82,7 +82,7 @@ public:
 
     void localfiltering(MultidimArray< std::complex<double> > &myfftV,
     										MultidimArray<double> &localfilteredVol,
-    										double &minRes, double &maxRes, double &step);
+    										double &minFreq, double &maxFreq, double &step);
 
     void estimateS(MultidimArray <double> vol);
 
