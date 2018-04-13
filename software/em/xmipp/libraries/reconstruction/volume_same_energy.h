@@ -24,8 +24,8 @@
  *  e-mail address 'xmipp@cnb.csic.es'
  ***************************************************************************/
 
-#ifndef _PROG_LOC_SHARPENING
-#define _PROG_LOC_SHARPENING
+#ifndef _PROG_SAME_ENERGY
+#define _PROG_SAME_ENERGY
 
 #include <iostream>
 #include <data/xmipp_program.h>
@@ -41,12 +41,12 @@
 #include <string>
 #include "symmetrize.h"
 
-/**@defgroup Local Sharpening
+/**@defgroup same Energy
    @ingroup ReconsLibrary */
 //@{
 /** SSNR parameters. */
 
-class ProgLocSharpening : public XmippProgram
+class ProgSameEnergy : public XmippProgram
 {
 public:
 	 /** Filenames */
@@ -78,18 +78,17 @@ public:
     										double &minFreq, double &maxFreq, double &step);
 
     void amplitudeMonogenicSignalBP(MultidimArray< std::complex<double> > &myfftV,
-    		double w1, double w1l, MultidimArray<double> &amplitude, int count);
+    		double w, double step, int count, MultidimArray<double> &bpVol);
 
-    void sameEnergy(MultidimArray< std::complex<double> > &myfftV,
-			MultidimArray<double> &localfilteredVol,
-			double &minFreq, double &maxFreq, double &step);
+    void sameEnergy(MultidimArray<double> Vorig,
+			double &minFreq, double &maxFreq, double &step, MultidimArray<double> &bpVol);
 
     void run();
 
 public:
     CDF cdfS;
     std::vector<int> idxList;
-    MultidimArray<int> idxVol;
+    MultidimArray<int> idxVol, mask;
     MultidimArray<double> Vorig;//, VsoftMask;
     MultidimArray<double> resVol, resVol0;
     MultidimArray<double> iu, sharpenedMap; // Inverse of the frequency
