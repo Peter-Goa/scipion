@@ -261,7 +261,6 @@ void ProgLocSharpening::run()
         auxVol = filteredVol;
         transformer.FourierTransform(auxVol, fftV);
 
-
         localfiltering(fftV, operatedfiltered, minRes, maxRes, step);
 
                 Image<double> save;
@@ -271,15 +270,29 @@ void ProgLocSharpening::run()
                 filteredVol = Vorig;
         		filteredVol -= operatedfiltered;
 
+        		//calculate norm^2 del Vorig
+        		if (i==0)
+        		{
+            		double norm=0;
+            		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(Vorig)
+            		{
+            			 norm +=(DIRECT_MULTIDIM_ELEM(Vorig,n)*DIRECT_MULTIDIM_ELEM(Vorig,n));
+            		}
+            		norm=sqrt(norm);
+                    std::cout << "norma del original  " << norm << std::endl;
+        		}
+
+
+
         		//calculate norm^2
         		double norm=0;
-        		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
+        		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(operatedfiltered)
         		{
-        			 norm +=(DIRECT_MULTIDIM_ELEM(filteredVol,n)*DIRECT_MULTIDIM_ELEM(filteredVol,n));
+        			 norm +=(DIRECT_MULTIDIM_ELEM(operatedfiltered,n)*DIRECT_MULTIDIM_ELEM(operatedfiltered,n));
         		}
-        		//norma=sqrt(norma);
+        		norm=sqrt(norm);
 
-                double porc=norm*100/lastnorm;
+                double porc=lastnorm*100/norm;
                 std::cout << "norma " << norm << " porciento " << porc << std::endl;
                 lastnorm=norm;
 

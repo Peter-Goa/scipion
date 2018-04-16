@@ -330,7 +330,7 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 //	meanAmplitude = meanAmplitude/((double) NA);
 	meanAmplitude = meanAmplitude/NA;
 
-	if (w>sampling/40)
+	//if (w>sampling/40)
 		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(bpVol)
 		{
 
