@@ -54,7 +54,7 @@ public:
 
 	/** sampling rate, minimum resolution, and maximum resolution */
 	double sampling, maxRes, minRes, lambda, maxFreq, minFreq;
-	int Niter;
+	int Niter, Nthread;
 
 public:
 
@@ -94,7 +94,7 @@ public:
     MultidimArray<double> resVol, resVol0;
     MultidimArray<double> iu, sharpenedMap; // Inverse of the frequency
 	MultidimArray< std::complex<double> > fftV, fftVfilter; // Fourier transform of the input volume
-	FourierTransformer transformer_inv;
+	FourierTransformer transformer, transformer_inv;
 	FourierFilter FilterBand;
 	Image<double> Vfiltered, VresolutionFiltered;
 };

@@ -34,7 +34,8 @@ void ProgLocSharpening::readParams()
         fnRes = getParam("--resolution_map");
         sampling = getDoubleParam("--sampling");
         lambda = getDoubleParam("-l");
-        Niter = getIntParam("-n");
+        Niter = getIntParam("-i");
+        Nthread = getIntParam("-n");
         fnOut = getParam("-o");
 }
 
@@ -45,8 +46,9 @@ void ProgLocSharpening::defineParams()
         addParamsLine("  --resolution_map <vol_file=\"\">: Resolution map");
         addParamsLine("  -o <output=\"Sharpening.vol\">: sharpening volume");
         addParamsLine("  --sampling <s=1>: sampling");
-        addParamsLine("  -l <s=1>: regularization param");
-        addParamsLine("  -n <s=5>: iteration");
+        addParamsLine("  -l <lambda=1>: regularization param");
+        addParamsLine("  -i <Niter=5>: iteration");
+        addParamsLine("  [-n <Nthread=1>]: threads number");
 }
 
 void ProgLocSharpening::produceSideInfo()
@@ -56,7 +58,14 @@ void ProgLocSharpening::produceSideInfo()
     V.read(fnVol);
     V().setXmippOrigin();
 
-        FourierTransformer transformer;
+
+        if (Nthread>1)
+        {
+           std::cout << "used procesors = " << Nthread << std::endl;
+           transformer_inv.setThreadsNumber(Nthread);
+           transformer.setThreadsNumber(Nthread);
+        }
+
         MultidimArray<double> &inputVol = V();
 
         Vorig = inputVol;
@@ -249,8 +258,6 @@ void ProgLocSharpening::run()
         std::cout << "Resolutions between " << minRes << " and " << maxRes << std::endl;
 
         int lastidx = -1;
-
-        FourierTransformer transformer;
 
         filteredVol = Vorig;
       	sharpenedMap.resizeNoCopy(Vorig);
