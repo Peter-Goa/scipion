@@ -46,7 +46,7 @@ void ProgLocSharpening::defineParams()
         addParamsLine("  --resolution_map <vol_file=\"\">: Resolution map");
         addParamsLine("  -o <output=\"Sharpening.vol\">: sharpening volume");
         addParamsLine("  --sampling <s=1>: sampling");
-        addParamsLine("  -l <lambda=1>: regularization param");
+        addParamsLine("  [-l <lambda=1>]: regularization param");
         addParamsLine("  -i <Niter=5>: iteration");
         addParamsLine("  [-n <Nthread=1>]: threads number");
 }
@@ -261,8 +261,9 @@ void ProgLocSharpening::run()
 
         filteredVol = Vorig;
       	sharpenedMap.resizeNoCopy(Vorig);
+		double normOrig=0;
 
-    for (size_t i = 0; i<Niter; ++i)
+    for (size_t i = 1; i<=Niter; ++i)
         {
         std::cout << "----------------Iteration " << i << "----------------" << std::endl;
         auxVol = filteredVol;
@@ -270,28 +271,22 @@ void ProgLocSharpening::run()
 
         localfiltering(fftV, operatedfiltered, minRes, maxRes, step);
 
-                Image<double> save;
-//                save() = operatedfiltered;
-//                save.write(formatString("sharpenedMapA_%i.vol", i));
-
                 filteredVol = Vorig;
         		filteredVol -= operatedfiltered;
 
-        		//calculate norm^2 del Vorig
-        		if (i==0)
+        		//calculate norm for Vorig
+        		if (i==1)
         		{
-            		double norm=0;
             		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(Vorig)
             		{
-            			 norm +=(DIRECT_MULTIDIM_ELEM(Vorig,n)*DIRECT_MULTIDIM_ELEM(Vorig,n));
+            			normOrig +=(DIRECT_MULTIDIM_ELEM(Vorig,n)*DIRECT_MULTIDIM_ELEM(Vorig,n));
             		}
-            		norm=sqrt(norm);
-                    std::cout << "norma del original  " << norm << std::endl;
+            		normOrig=sqrt(normOrig);
+                    std::cout << "norma del original  " << normOrig << std::endl;
         		}
 
 
-
-        		//calculate norm^2
+        		//calculate norm for operatedfiltered
         		double norm=0;
         		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(operatedfiltered)
         		{
@@ -303,19 +298,15 @@ void ProgLocSharpening::run()
                 std::cout << "norma " << norm << " porciento " << porc << std::endl;
                 lastnorm=norm;
 
-
-
-//                save() = filteredVol;
-//                save.write(formatString("sharpenedMapB_%i.vol", i));
+                lambda=(normOrig/norm)/4;
+                std::cout << "iteration "<< i << "  lambda  " << lambda << std::endl;
 
                 ////Second operator
         transformer.FourierTransform(filteredVol, fftV);
         localfiltering(fftV, filteredVol, minRes, maxRes, step);
 
-//                save() = filteredVol;
-//                save.write(formatString("sharpenedMapC_%i.vol", i));
 
-                if (i == 0)
+                if (i == 1)
                         Vk = Vorig;
                 else
                         Vk = sharpenedMap;
@@ -336,7 +327,6 @@ void ProgLocSharpening::run()
         Image<double> filteredvolume;
         filteredvolume() = sharpenedMap;
         filteredvolume.write(fnOut);
-
 
 }
 
