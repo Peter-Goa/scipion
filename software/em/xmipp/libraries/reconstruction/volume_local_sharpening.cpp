@@ -182,7 +182,7 @@ void ProgLocSharpening::localfiltering(MultidimArray< std::complex<double> > &my
                                        MultidimArray<double> &localfilteredVol,
                                        double &minRes, double &maxRes, double &step)
 {
-        MultidimArray<double> lastfreqVol, filteredVol, lastweight, weight;
+        MultidimArray<double> filteredVol, lastweight, weight;
         localfilteredVol.initZeros(Vorig);
         weight.initZeros(Vorig);
         lastweight.initZeros(Vorig);
@@ -243,23 +243,18 @@ void ProgLocSharpening::run()
         produceSideInfo();
 
         MultidimArray<double> auxVol;
-        double lastnorm=0;
-        double lastporc=1;
-        int bool1=1, bool2=1;
+        MultidimArray<double> operatedfiltered, Vk, filteredVol;
+        double lastnorm=0, lastporc=1;
         double freq;
-        int idx;
-
         double step = 0.2;
         double lastResolution=1e38;
-
-        MultidimArray<double> operatedfiltered, Vk, filteredVol;
+        int  idx, bool1=1, bool2=1;
+        int lastidx = -1;
 
         minRes = 2*sampling;
         //maxRes = 20;//Esto solo para este caso
 
         std::cout << "Resolutions between " << minRes << " and " << maxRes << std::endl;
-
-        int lastidx = -1;
 
         filteredVol = Vorig;
       	sharpenedMap.resizeNoCopy(Vorig);
@@ -296,6 +291,7 @@ void ProgLocSharpening::run()
         		}
         		norm=sqrt(norm);
 
+
                 double porc=lastnorm*100/norm;
                 std::cout << "norma " << norm << " porciento " << porc << std::endl;
 
@@ -315,8 +311,11 @@ void ProgLocSharpening::run()
                 lastnorm=norm;
                 lastporc=porc;
 
-                lambda=(normOrig/norm)/4;
-                std::cout << "iteration "<< i << "  lambda  " << lambda << std::endl;
+                if (i==1)
+                {
+                	lambda=(normOrig/norm)/4;
+                }
+               	std::cout << "iteration "<< i << "  lambda  " << lambda << std::endl;
 
 
 
@@ -340,6 +339,7 @@ void ProgLocSharpening::run()
                 Image<double> filteredvolume0;
                 filteredvolume0() = sharpenedMap;
                 filteredvolume0.write(formatString("sharpenedMapD_%i.vol", i));
+                filteredvolume0.clear();
 
                 filteredVol = sharpenedMap;
         }
