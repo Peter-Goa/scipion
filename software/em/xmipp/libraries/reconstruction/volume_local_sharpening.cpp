@@ -243,7 +243,9 @@ void ProgLocSharpening::run()
         produceSideInfo();
 
         MultidimArray<double> auxVol;
-        double lastnorm=1;
+        double lastnorm=0;
+        double lastporc=1;
+        int bool1=1, bool2=1;
         double freq;
         int idx;
 
@@ -296,10 +298,27 @@ void ProgLocSharpening::run()
 
                 double porc=lastnorm*100/norm;
                 std::cout << "norma " << norm << " porciento " << porc << std::endl;
+
+                double subst=porc-lastporc;
+
+                if ((subst<1)&&(bool1==1)&&(i>2))
+                {
+                	bool1=2;
+                    std::cout << "-------------la resta es menor que 1 para iter  ----- " << i << std::endl;
+                }
+                if ((subst<0.5)&&(bool2==1)&&(i>2))
+                {
+                	bool2=2;
+                    std::cout << "-------------la resta es menor que 0.5 para iter  ----- " << i << std::endl;
+                }
+
                 lastnorm=norm;
+                lastporc=porc;
 
                 lambda=(normOrig/norm)/4;
                 std::cout << "iteration "<< i << "  lambda  " << lambda << std::endl;
+
+
 
                 ////Second operator
         transformer.FourierTransform(filteredVol, fftV);
