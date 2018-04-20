@@ -251,7 +251,7 @@ void ProgLocSharpening::run()
         int  idx, bool1=1, bool2=1;
         int lastidx = -1;
 
-        minRes = 2*sampling;
+        //minRes = 2*sampling;
         //maxRes = 20;//Esto solo para este caso
 
         std::cout << "Resolutions between " << minRes << " and " << maxRes << std::endl;
@@ -336,10 +336,11 @@ void ProgLocSharpening::run()
         			                     lambda*DIRECT_MULTIDIM_ELEM(filteredVol,n);
                 }
 
-                Image<double> filteredvolume0;
-                filteredvolume0() = sharpenedMap;
-                filteredvolume0.write(formatString("sharpenedMapD_%i.vol", i));
-                filteredvolume0.clear();
+                Image<double> filteredvolume;
+                filteredvolume = sharpenedMap;
+                filteredvolume.write(formatString("sharpenedMapD_%i.vol", i));
+                filteredvolume.clear();
+
 
                 filteredVol = sharpenedMap;
         }
