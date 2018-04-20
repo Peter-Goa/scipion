@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # **************************************************************************
 # *
-# * Authors:     Jose Luis Vilas (jlvilas@cnb.csic.es)
+# * Authors:     Erney Ramirez Aportela (jramirez@cnb.csic.es)
 # *
 # * Unidad de  Bioinformatica of Centro Nacional de Biotecnologia , CSIC
 # *

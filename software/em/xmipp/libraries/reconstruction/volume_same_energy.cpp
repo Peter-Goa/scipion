@@ -33,20 +33,18 @@ void ProgSameEnergy::readParams()
 	fnVol = getParam("--vol");
 	fnRes = getParam("--resolution_map");
 	sampling = getDoubleParam("--sampling");
-	lambda = getDoubleParam("-l");
-	Niter = getIntParam("-n");
+    Nthread = getIntParam("-n");
 	fnOut = getParam("-o");
 }
 
 void ProgSameEnergy::defineParams()
 {
-	addUsageLine("This function performs local sharpening");
+	addUsageLine("This function performs same contrast");
 	addParamsLine("  --vol <vol_file=\"\">   : Input volume");
 	addParamsLine("  --resolution_map <vol_file=\"\">: Resolution map");
 	addParamsLine("  -o <output=\"Sharpening.vol\">: sharpening volume");
 	addParamsLine("  --sampling <s=1>: sampling");
-	addParamsLine("  -l <s=1>: regularization param");
-	addParamsLine("  -n <s=5>: iteration");
+    addParamsLine("  [-n <Nthread=1>]: threads number");
 }
 
 void ProgSameEnergy::produceSideInfo()
@@ -56,7 +54,13 @@ void ProgSameEnergy::produceSideInfo()
     V.read(fnVol);
     V().setXmippOrigin();
 
-	FourierTransformer transformer;
+    if (Nthread>1)
+    {
+       std::cout << "used procesors = " << Nthread << std::endl;
+       transformer_inv.setThreadsNumber(Nthread);
+       transformer.setThreadsNumber(Nthread);
+    }
+
 	MultidimArray<double> &inputVol = V();
 
 	Vorig = inputVol;
@@ -237,7 +241,7 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 //	filteredvolume.write(formatString("Volumen_filtrado_%i.vol", count));
 
 	transformer_inv.inverseFourierTransform(fftVRiesz, bpVol);
-//	std::cout << " 1" << std::endl;
+
 	#ifdef DEBUG
 	Image<double> filteredvolume;
 	filteredvolume = VRiesz;
@@ -264,9 +268,9 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 			}
 		}
 	}
-//	std::cout << " ====== " << std::endl;
+
 	transformer_inv.inverseFourierTransform(fftVRiesz, VRiesz);
-//	std::cout << " ====== " << std::endl;
+
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(amplitude)
 		DIRECT_MULTIDIM_ELEM(amplitude,n)+=DIRECT_MULTIDIM_ELEM(VRiesz,n)*DIRECT_MULTIDIM_ELEM(VRiesz,n);
 
@@ -292,7 +296,6 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(amplitude)
 		DIRECT_MULTIDIM_ELEM(amplitude,n)+=DIRECT_MULTIDIM_ELEM(VRiesz,n)*DIRECT_MULTIDIM_ELEM(VRiesz,n);
 
-//	std::cout << "3" << std::endl;
 	transformer_inv.inverseFourierTransform(fftVRiesz_aux, VRiesz);
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(amplitude)
 	{
@@ -330,7 +333,9 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 //	meanAmplitude = meanAmplitude/((double) NA);
 	meanAmplitude = meanAmplitude/NA;
 
-	//if (w>sampling/40)
+	if (w<sampling/10)
+	{
+		std::cout << "-------aqui toca cambiar el contraste-------- " << std::endl;
 		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(bpVol)
 		{
 
@@ -339,6 +344,7 @@ void ProgSameEnergy::amplitudeMonogenicSignalBP(MultidimArray< std::complex<doub
 				DIRECT_MULTIDIM_ELEM(bpVol,n) *= meanAmplitude/DIRECT_MULTIDIM_ELEM(amplitude,n);
 			}
 		}
+	}
 
 
 
@@ -377,7 +383,7 @@ void ProgSameEnergy::run()
 
 	Image<double> save;
 	save() = bpVol;
-	save.write(formatString("energy.vol"));
+	save.write(fnOut);
 	///////////////////
 
 
