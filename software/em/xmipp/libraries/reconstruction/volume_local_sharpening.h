@@ -89,6 +89,7 @@ public:
 public:
     CDF cdfS;
     MultidimArray<double> Vorig;//, VsoftMask;
+    MultidimArray<int> mask;
     MultidimArray<double> resVol;
     MultidimArray<double> iu, sharpenedMap; // Inverse of the frequency
 	MultidimArray< std::complex<double> > fftV, fftVfilter; // Fourier transform of the input volume
