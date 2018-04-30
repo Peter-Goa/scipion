@@ -27,7 +27,7 @@
 #include "volume_local_sharpening.h"
 //#define DEBUG
 //#define DEBUG_MASK
-//#define DEBUG_FILTER
+#define DEBUG_FILTER
 void ProgLocSharpening::readParams()
 {
         fnVol = getParam("--vol");
@@ -109,13 +109,11 @@ void ProgLocSharpening::produceSideInfo()
 
     	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(resVol)
     	{
-    		if (DIRECT_MULTIDIM_ELEM(resVol, n) < 2*sampling)
+    		if (DIRECT_MULTIDIM_ELEM(resVol, n) >= minRes)
+    			DIRECT_MULTIDIM_ELEM(mask, n) = 1;
+    		if ((DIRECT_MULTIDIM_ELEM(resVol, n) < 2*sampling))// && (DIRECT_MULTIDIM_ELEM(resVol, n)>0))
     		{
     			DIRECT_MULTIDIM_ELEM(resVol, n) = 2*sampling;
-    		}
-    		else
-    		{
-    			DIRECT_MULTIDIM_ELEM(mask, n) = 1;
     		}
     	}
 
@@ -178,11 +176,11 @@ void ProgLocSharpening::bandPassFilterFunction(const MultidimArray< std::complex
 
         transformer_inv.inverseFourierTransform(fftVfilter, filteredVol);
 
-        #ifdef DEBUG_FILTER
-        Image<double> filteredvolume;
-        filteredvolume() = filteredVol;
-        filteredvolume.write(formatString("Volumen_filtrado_%i.vol", count));
-        #endif
+//        #ifdef DEBUG_FILTER
+//        Image<double> filteredvolume;
+//        filteredvolume() = filteredVol;
+//        filteredvolume.write(formatString("Volumen_filtrado_%i.vol", count));
+//        #endif
 }
 
 void ProgLocSharpening::localfiltering(MultidimArray< std::complex<double> > &myfftV,
@@ -226,16 +224,31 @@ void ProgLocSharpening::localfiltering(MultidimArray< std::complex<double> > &my
 
                 FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
                 {
-                	if (DIRECT_MULTIDIM_ELEM(mask, n)>0)
-                	{
-                        double res = DIRECT_MULTIDIM_ELEM(resVol, n);//+1e-38;
-                        double freq_map = sampling/res;
 
-                        DIRECT_MULTIDIM_ELEM(weight, n) = (exp(-0.5*(freq-freq_map)*(freq-freq_map)));
-                        DIRECT_MULTIDIM_ELEM(filteredVol, n) *= DIRECT_MULTIDIM_ELEM(weight, n);
-                	}
-                	else
-                		DIRECT_MULTIDIM_ELEM(weight, n) =1;
+	                	double res_map = DIRECT_MULTIDIM_ELEM(resVol, n);//+1e-38;
+	                    double freq_map = sampling/res_map;
+
+	                   if (DIRECT_MULTIDIM_ELEM(mask, n) == 0)
+	                	{
+	                	   DIRECT_MULTIDIM_ELEM(filteredVol, n)=0;
+	                	}
+	                   else
+	                	   {
+
+//                	 if ((res<res_map+3) && (res>res_map-3))
+//                	 	 {
+
+                		 //DIRECT_MULTIDIM_ELEM(weight, n) = (exp(-10*(freq-freq_map)*(freq-freq_map)));
+	                     DIRECT_MULTIDIM_ELEM(weight, n) = (exp(-0.025*(res-res_map)*(res-res_map)));
+                		 DIRECT_MULTIDIM_ELEM(filteredVol, n) *= DIRECT_MULTIDIM_ELEM(weight, n);
+                             }
+//                	 	 }
+
+//	                    	if ((DIRECT_MULTIDIM_ELEM(mask, n) = 0) && (DIRECT_MULTIDIM_ELEM(filteredVol, n) > 0))
+//	                    		DIRECT_MULTIDIM_ELEM(filteredVol, n)=0;
+//	                    }
+//	                  else
+//	                    	DIRECT_MULTIDIM_ELEM(filteredVol, n)=0;
 
                 }
 
@@ -244,8 +257,13 @@ void ProgLocSharpening::localfiltering(MultidimArray< std::complex<double> > &my
                 lastResolution = res;
                 lastidx = idx;
         }
+        FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(lastweight)
+        {
+        	if (DIRECT_MULTIDIM_ELEM(lastweight, n)==0)
+                DIRECT_MULTIDIM_ELEM(lastweight, n) = 1;
+        }
 
-        FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredVol)
+        FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(localfilteredVol)
         {
                 DIRECT_MULTIDIM_ELEM(localfilteredVol, n) = DIRECT_MULTIDIM_ELEM(localfilteredVol, n)/DIRECT_MULTIDIM_ELEM(lastweight, n);
         }
@@ -264,8 +282,11 @@ void ProgLocSharpening::run()
         int  idx, bool1=1, bool2=1;
         int lastidx = -1;
 
-        //minRes = 2*sampling;
-        //maxRes = 20;//Esto solo para este caso
+        minRes = 2*sampling;
+        //maxRes = sampling/0.0001;//Esto solo para este caso
+        maxRes=maxRes+2;
+        //maxRes=13;
+        //maxRes = maxRes+1;
 
         std::cout << "Resolutions between " << minRes << " and " << maxRes << std::endl;
 
@@ -333,9 +354,9 @@ void ProgLocSharpening::run()
                 lastnorm=norm;
                 lastporc=porc;
 
-                if (i==1)
+                if (i==1 && lambda==1)
                 {
-                	lambda=(normOrig/norm)/4;
+                	lambda=(normOrig/norm)/6;
                 }
                	std::cout << "iteration "<< i << "  lambda  " << lambda << std::endl;
 
